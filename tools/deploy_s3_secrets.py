@@ -13,7 +13,7 @@ def deploy(src_file):
         with open(dst_file, "w+") as dst:
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
 
     if not deploy_options.apply_manifest:

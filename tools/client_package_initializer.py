@@ -85,17 +85,10 @@ class SetupInitializer:
         """
         Load setup.py arguments as python dict
         """
-        data = ""
-
         with open(self._setup_path) as f:
             lines = f.readlines()
 
-        for line in lines:
-            if "setup(" in line:
-                data += "SETUP = dict("
-            else:
-                data += line
-
+        data = "".join("SETUP = dict(" if "setup(" in line else line for line in lines)
         setup = self._execute(data)["SETUP"]
         for key in self._setup_data.keys():
             try:
@@ -118,7 +111,7 @@ class SetupInitializer:
         :param data: Python dict as string
         :return: key value dict loaded from data
         """
-        d = dict()
+        d = {}
         exec(data, d)
         return d
 

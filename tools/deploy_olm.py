@@ -46,7 +46,7 @@ def main():
                     deploy_options.namespace,
                     os.path.basename(urlparse(manifest_url).path)
                 )
-                print("Deploying {}".format(dst_file))
+                print(f"Deploying {dst_file}")
                 urlretrieve(manifest_url, dst_file)
                 utils.apply(
                     target=deploy_options.target,

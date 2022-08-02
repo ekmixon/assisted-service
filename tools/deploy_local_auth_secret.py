@@ -13,7 +13,7 @@ def render_file(namespace, private_key, public_key):
             data = data.replace('REPLACE_NAMESPACE', f'"{namespace}"')
             data = data.replace('REPLACE_PRIVATE_KEY', f'"{private_key}"')
             data = data.replace('REPLACE_PUBLIC_KEY', f'"{public_key}"')
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
     return dst_file
 
@@ -33,20 +33,18 @@ def main():
         return
 
     secret_name = 'assisted-installer-local-auth-key'
-    exists = utils.check_if_exists(
+    if exists := utils.check_if_exists(
         "secret",
         secret_name,
         target=deploy_options.target,
-        namespace=deploy_options.namespace
-    )
-
-    if exists:
+        namespace=deploy_options.namespace,
+    ):
         print(f'Secret {secret_name} already exists in namespace {deploy_options.namespace}')
         return
 
     output_dir = tempfile.TemporaryDirectory()
-    priv_path = os.path.join(output_dir.name, f'ec-private-key.pem')
-    pub_path = os.path.join(output_dir.name, f'ec-public-key.pem')
+    priv_path = os.path.join(output_dir.name, 'ec-private-key.pem')
+    pub_path = os.path.join(output_dir.name, 'ec-public-key.pem')
 
     print(utils.check_output(f'openssl ecparam -name prime256v1 -genkey -noout -out {priv_path}'))
     print(utils.check_output(f'openssl ec -in {priv_path} -pubout -out {pub_path}'))

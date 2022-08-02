@@ -7,13 +7,13 @@ import utils
 
 
 def get_ca(output_dir, force_replace=False):
-    ca_subject = "/CN=Assisted Installer"
-    ca_expiration = 365
-
     ca_csr_path = os.path.join(output_dir, "ca.csr")
     ca_key_path = os.path.join(output_dir, "ca-key.pem")
 
     if force_replace or not os.path.exists(ca_csr_path):
+        ca_subject = "/CN=Assisted Installer"
+        ca_expiration = 365
+
         print(utils.check_output(f'openssl req -x509 -nodes -subj "{ca_subject}" -days {ca_expiration} '
                                  f'-newkey rsa:4096 -keyout "{ca_key_path}" -outform PEM -out "{ca_csr_path}"'))
 

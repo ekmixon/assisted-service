@@ -153,41 +153,36 @@ class EventGenerator(object):
             return getattr(self.event, attr)
 
     def ctor_name(self):
-        return "New" + self.event_class()
+        return f"New{self.event_class()}"
 
     def ctor_args(self):
-        args = []
-        for arg, _ in self.event.properties.iteritems():
-            args.append(EventGenerator.camel_case(arg) + " " + EventGenerator.pascal_case(arg))
+        args = [
+            f"{EventGenerator.camel_case(arg)} {EventGenerator.pascal_case(arg)}"
+            for arg, _ in self.event.properties.iteritems()
+        ]
+
         return ", ".join(args)
 
     def event_class(self):
-        return EventGenerator.pascal_case(self.event.name) + "Event"
+        return f"{EventGenerator.pascal_case(self.event.name)}Event"
 
     def event_type(self):
-        return "Type" + EventGenerator.pascal_case(self.event.name)
+        return f"Type{EventGenerator.pascal_case(self.event.name)}"
 
     def event_severity(self):
         return self.event.severity.lower()
 
     @staticmethod
     def base_event(event):
-        if event.type == "cluster":
-            return "ClusterBaseEvent"
-        else:
-            return "HostBaseEvent"
+        return "ClusterBaseEvent" if event.type == "cluster" else "HostBaseEvent"
 
     @staticmethod
     def cap(s):
-        if len(s) == 0:
-            return s
-        return s[0].upper() + s[1:]
+        return s if len(s) == 0 else s[0].upper() + s[1:]
 
     @staticmethod
     def package_private(s):
-        if len(s) == 0:
-            return s
-        return s[0].lower() + s[1:]
+        return s if len(s) == 0 else s[0].lower() + s[1:]
 
     @staticmethod
     def camel_case(value):
@@ -204,10 +199,7 @@ class EventGenerator(object):
 
     @staticmethod
     def type_to_string(var_type, var_name):
-        if var_type == 'string':
-            return var_name
-        else:
-            return 'fmt.Sprint({})'.format(var_name)
+        return var_name if var_type == 'string' else f'fmt.Sprint({var_name})'
 
 
 class EventDef:
@@ -248,7 +240,7 @@ def validate_event(e):
 
     for p in required_props:
         if p not in e['properties']:
-            raise Exception("Missing '{}' in properties of {}".format(p, e['name']))
+            raise Exception(f"Missing '{p}' in properties of {e['name']}")
 
     if e['event_type'] == "cluster":
         invalid_props = INVALID_CLUSTER_PROPERTIES
@@ -258,11 +250,11 @@ def validate_event(e):
         invalid_props = INVALID_INFRA_ENV_PROPERTIES
     for p in invalid_props:
         if p in e['properties']:
-            raise Exception("Invalid '{}' in properties of {}".format(p, e['name']))
+            raise Exception(f"Invalid '{p}' in properties of {e['name']}")
 
     valid_severities = VALID_SEVERITY_VALUES
     if e['severity'] not in valid_severities:
-        raise Exception("Invalid '{}' as severity of {}".format(e['severity'], e['name']))
+        raise Exception(f"Invalid '{e['severity']}' as severity of {e['name']}")
 
 
 def parse(yaml_path):

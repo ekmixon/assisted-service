@@ -31,8 +31,8 @@ def deploy_oauth_reqs():
             target=deploy_options.target,
             namespace=deploy_options.namespace,
             ):
-        cmd = "{} -n {} create secret generic {} --from-literal=session_secret={}"\
-        .format(CMD_BIN, deploy_options.namespace, secret_name, session_secret)
+        cmd = f"{CMD_BIN} -n {deploy_options.namespace} create secret generic {secret_name} --from-literal=session_secret={session_secret}"
+
         utils.check_output(cmd)
 
     ## Create and Annotate Serviceaccount
@@ -43,12 +43,13 @@ def deploy_oauth_reqs():
             target=deploy_options.target,
             namespace=deploy_options.namespace,
         ):
-        cmd = "{} -n {} create serviceaccount {} ".format(CMD_BIN, deploy_options.namespace, sa_name)
+        cmd = f"{CMD_BIN} -n {deploy_options.namespace} create serviceaccount {sa_name} "
+
         utils.check_output(cmd)
     json_manifest = '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"grafana"}}'
     annotation_name = 'serviceaccounts.openshift.io/oauth-redirectreference.grafana'
-    cmd = "{} -n {} annotate serviceaccount {} --overwrite {}='{}'".format(
-        CMD_BIN, deploy_options.namespace, sa_name, annotation_name, json_manifest)
+    cmd = f"{CMD_BIN} -n {deploy_options.namespace} annotate serviceaccount {sa_name} --overwrite {annotation_name}='{json_manifest}'"
+
     utils.check_output(cmd)
 
     # Get OCP Certificate
@@ -61,7 +62,8 @@ def deploy_oauth_reqs():
         secret_name = 'router-certs-default'
         namespace = 'openshift-ingress'
         template = '{{index .data "tls.crt"}}'
-        cmd = "{} get secret {} --namespace={} --template '{}'".format(CMD_BIN, secret_name, namespace, template)
+        cmd = f"{CMD_BIN} get secret {secret_name} --namespace={namespace} --template '{template}'"
+
         ca_cert = utils.check_output(cmd)
 
         # Renderized secret with CA Certificate of the OCP Cluster
@@ -75,7 +77,7 @@ def deploy_oauth_reqs():
                 data = src.read()
                 data = data.replace("BASE64_CERT", ca_cert)
                 data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-                print("Deploying {}: {}".format(topic, dst_file))
+                print(f"Deploying {topic}: {dst_file}")
                 dst.write(data)
         utils.apply(
             target=deploy_options.target,
@@ -92,7 +94,7 @@ def deployer(src_file, topic):
     data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
     with open(dst_file, 'w') as fp:
         fp.write(data)
-    print("Deploying {}: {}".format(topic ,dst_file))
+    print(f"Deploying {topic}: {dst_file}")
     utils.apply(
         target=deploy_options.target,
         namespace=deploy_options.namespace,
@@ -116,8 +118,8 @@ def deploy_grafana_route():
         # I have not permissions, yes it's ugly...
         # This ingress should be there because of UI deployment
         json_path_ingress = '{.spec.rules[0].host}'
-        cmd = "{} -n {} get ingress assisted-installer -o jsonpath='{}'".format(
-            CMD_BIN, deploy_options.namespace,  json_path_ingress)
+        cmd = f"{CMD_BIN} -n {deploy_options.namespace} get ingress assisted-installer -o jsonpath='{json_path_ingress}'"
+
         assisted_installer_ingress_domain = utils.check_output(cmd)
         if assisted_installer_ingress_domain.split(".")[0] != 'assisted-installer':
             print("Error recovering the ingress route")
@@ -129,7 +131,7 @@ def deploy_grafana_route():
             data = src.read()
             data = data.replace("INGRESS_DOMAIN", ingress_domain)
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-            print("Deploying {}: {}".format(topic, dst_file))
+            print(f"Deploying {topic}: {dst_file}")
             dst.write(data)
     utils.apply(
         target=deploy_options.target,
@@ -154,14 +156,15 @@ def deploy_grafana_ds():
             namespace=deploy_options.namespace,
             ):
         print("Creating Grafana Datasource")
-        cmd = "{} create secret generic {} --namespace={} --from-file=prometheus.yaml={}".format(CMD_BIN, secret_name, deploy_options.namespace, dst_file)
+        cmd = f"{CMD_BIN} create secret generic {secret_name} --namespace={deploy_options.namespace} --from-file=prometheus.yaml={dst_file}"
+
         utils.check_output(cmd)
 
 
 def deploy_grafana_config(conf_file):
     '''Deploy Grafana ConfigMap'''
     secret_name = 'grafana-config'
-    src_file = os.path.join(os.getcwd(), "deploy/monitoring/grafana/" + conf_file)
+    src_file = os.path.join(os.getcwd(), f"deploy/monitoring/grafana/{conf_file}")
     dst_file = os.path.join(os.getcwd(), conf_file)
     with open(src_file) as fp:
         data = fp.read()
@@ -175,14 +178,14 @@ def deploy_grafana_config(conf_file):
             namespace=deploy_options.namespace,
             ):
         print("Creating Grafana Configuration")
-        cmd = "{} create secret generic {} --namespace={} --from-file=grafana.ini={}".format(CMD_BIN, secret_name, deploy_options.namespace, dst_file)
-        utils.check_output(cmd)
     else:
         print("Updating Grafana Configuration")
-        cmd = "{} delete secret {} --namespace={}".format(CMD_BIN, secret_name, deploy_options.namespace)
+        cmd = f"{CMD_BIN} delete secret {secret_name} --namespace={deploy_options.namespace}"
+
         utils.check_output(cmd)
-        cmd = "{} create secret generic {} --namespace={} --from-file=grafana.ini={}".format(CMD_BIN, secret_name, deploy_options.namespace, dst_file)
-        utils.check_output(cmd)
+    cmd = f"{CMD_BIN} create secret generic {secret_name} --namespace={deploy_options.namespace} --from-file=grafana.ini={dst_file}"
+
+    utils.check_output(cmd)
 
 
 def main():

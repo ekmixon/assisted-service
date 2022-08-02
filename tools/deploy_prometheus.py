@@ -35,29 +35,31 @@ def deploy_oauth_reqs():
             target=deploy_options.target,
             namespace=deploy_options.namespace
             ):
-        cmd = "{} -n {} create secret generic {} --from-literal=session_secret={}" \
-                .format(CMD_BIN, deploy_options.namespace, secret_name, session_secret)
+        cmd = f"{CMD_BIN} -n {deploy_options.namespace} create secret generic {secret_name} --from-literal=session_secret={session_secret}"
+
         utils.check_output(cmd)
 
     ## Annotate Serviceaccount
     json_manifest = '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-assisted"}}'
     sa_name = 'prometheus-k8s'
     annotation_name = 'serviceaccounts.openshift.io/oauth-redirectreference.assisted-installer-prometheus'
-    cmd = "{} -n {} annotate serviceaccount {} --overwrite {}='{}'"\
-            .format(CMD_BIN, deploy_options.namespace, sa_name, annotation_name, json_manifest)
+    cmd = f"{CMD_BIN} -n {deploy_options.namespace} annotate serviceaccount {sa_name} --overwrite {annotation_name}='{json_manifest}'"
+
     utils.check_output(cmd)
 
     # Download OCP Certificate as a secret
     cert_secret_name = 'openshift-custom-ca'
-    cmd = "{} -n {} get secret {} --no-headers".format(CMD_BIN, deploy_options.namespace, cert_secret_name)
-    cert_secret = utils.check_output(cmd)
-    if not cert_secret:
+    cmd = f"{CMD_BIN} -n {deploy_options.namespace} get secret {cert_secret_name} --no-headers"
+
+    if cert_secret := utils.check_output(cmd):
+        print("Secret {} already exists", cert_secret_name)
+    else:
         # Get OCP Certificate
         secret_name = 'router-certs-default'
         namespace = 'openshift-ingress'
         template = '{{index .data "tls.crt"}}'
-        cmd = "{} get secret {} --namespace={} --template '{}'"\
-                .format(CMD_BIN, secret_name, namespace, template)
+        cmd = f"{CMD_BIN} get secret {secret_name} --namespace={namespace} --template '{template}'"
+
         ca_cert = utils.check_output(cmd)
 
         # Renderized secret with CA Certificate of the OCP Cluster
@@ -71,15 +73,13 @@ def deploy_oauth_reqs():
                 data = src.read()
                 data = data.replace("BASE64_CERT", ca_cert)
                 data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-                print("Deploying {}: {}".format(topic, dst_file))
+                print(f"Deploying {topic}: {dst_file}")
                 dst.write(data)
         utils.apply(
             target=deploy_options.target,
             namespace=deploy_options.namespace,
             file=dst_file
         )
-    else:
-        print("Secret {} already exists", cert_secret_name)
 
 
 def deploy_prometheus_route():
@@ -99,8 +99,8 @@ def deploy_prometheus_route():
         # I have not permissions, yes it's ugly...
         # This ingress should be there because of UI deployment
         json_path_ingress = '{.spec.rules[0].host}'
-        cmd = "{} -n {} get ingress assisted-installer -o jsonpath='{}'".format(
-            CMD_BIN, deploy_options.namespace, json_path_ingress)
+        cmd = f"{CMD_BIN} -n {deploy_options.namespace} get ingress assisted-installer -o jsonpath='{json_path_ingress}'"
+
         assisted_installer_ingress_domain = utils.check_output(cmd)
         if assisted_installer_ingress_domain.split(".")[0] != 'assisted-installer':
             print("Error recovering the ingress route")
@@ -112,7 +112,7 @@ def deploy_prometheus_route():
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
             data = data.replace("INGRESS_DOMAIN", ingress_domain)
-            print("Deploying {}: {}".format(topic, dst_file))
+            print(f"Deploying {topic}: {dst_file}")
             dst.write(data)
     utils.apply(
         target=deploy_options.target,
@@ -133,7 +133,7 @@ def deploy_prometheus_sub(olm_ns, cat_src):
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
             data = data.replace("CAT_SRC", cat_src).replace("OLM_NAMESPACE", olm_ns)
-            print("Deploying {}: {}".format(topic, dst_file))
+            print(f"Deploying {topic}: {dst_file}")
             dst.write(data)
     utils.apply(
         target=deploy_options.target,
@@ -157,7 +157,7 @@ def deployer(src_file, topic):
     data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
     with open(dst_file, 'w') as fp:
         fp.write(data)
-    print("Deploying {}: {}".format(topic ,dst_file))
+    print(f"Deploying {topic}: {dst_file}")
     utils.apply(
         target=deploy_options.target,
         namespace=deploy_options.namespace,
@@ -195,7 +195,7 @@ def main():
             deployer('deploy/monitoring/prometheus/assisted-installer-operator-group.yaml',
                      'OperatorGroup')
         except:
-            cmd = "{} -n {} get OperatorGroup --no-headers".format(CMD_BIN, deploy_options.namespace)
+            cmd = f"{CMD_BIN} -n {deploy_options.namespace} get OperatorGroup --no-headers"
             if not utils.check_output(cmd):
                 print("The creation of an OperatorGroup is Forbidden for you user please request a creation of one before execute this again, exiting...")
                 sys.exit(1)

@@ -29,8 +29,10 @@ def load_key():
         with open(KEY_FILE, "r") as f:
             return f.read()
     except Exception as e:
-        log.warn("Got exception {}, when tried to read key file at {}."
-              "Make sure you used tools/auth_keys_generator.go before running subsystem tests".format(e, KEY_FILE))
+        log.warn(
+            f"Got exception {e}, when tried to read key file at {KEY_FILE}.Make sure you used tools/auth_keys_generator.go before running subsystem tests"
+        )
+
         return ""
 
 
@@ -57,7 +59,10 @@ def main():
             data["spec"]["template"]["spec"]["containers"][0]["env"].append({'name':'SUBSYSTEM_RUN', 'value': 'True'})
             data["spec"]["template"]["spec"]["containers"][0]["env"].append({'name':'DUMMY_IGNITION', 'value': 'True'})
             data["spec"]["template"]["spec"]["containers"][0]["env"].append({'name':'OCM_BASE_URL', 'value': WIREMOCK_SERVICE})
-            data["spec"]["template"]["spec"]["containers"][0]["env"].append({'name':'OCM_TOKEN_URL', 'value': WIREMOCK_SERVICE + '/token'})
+            data["spec"]["template"]["spec"]["containers"][0]["env"].append(
+                {'name': 'OCM_TOKEN_URL', 'value': f'{WIREMOCK_SERVICE}/token'}
+            )
+
             data["spec"]["template"]["spec"]["containers"][0]["env"].append({'name':'OCM_SERVICE_CLIENT_ID', 'value': 'mock-ocm-client-id'})
             data["spec"]["template"]["spec"]["containers"][0]["env"].append({'name':'OCM_SERVICE_CLIENT_SECRET', 'value': 'mock-ocm-client-secret'})
 

@@ -29,7 +29,7 @@ def main():
                             "targetPort": int(port_number_str)}
                     data["spec"]["ports"].append(port)
 
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(yaml.dump(data))
 
     if deploy_options.apply_manifest:
@@ -69,7 +69,7 @@ def deploy_ingress(hostname, namespace, template_file):
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', namespace)
             data = data.replace("REPLACE_HOSTNAME", hostname)
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
     if deploy_options.apply_manifest:
         utils.apply(

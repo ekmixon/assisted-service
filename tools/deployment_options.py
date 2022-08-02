@@ -77,7 +77,7 @@ def load_deployment_options(parser=None):
 
 def get_file_content(repo_url, revision, file_path):
     """Get a git project file content of a specific revision/tag"""
-    url = "%s/contents/%s?ref=%s" % (repo_url, file_path, revision)
+    url = f"{repo_url}/contents/{file_path}?ref={revision}"
     response = requests.get(url)
     response.raise_for_status()
     return base64.b64decode(response.json()['content'])
@@ -93,7 +93,7 @@ def get_image_revision_from_manifest(short_image_name, manifest):
         for image in repo_info["images"]:
             if short_image_name == image.split('/')[-1]:
                 return repo_info["revision"]
-    raise Exception("Failed to find revision for image: %s" % short_image_name)
+    raise Exception(f"Failed to find revision for image: {short_image_name}")
 
 
 def get_tag(image_fqdn):
@@ -105,23 +105,34 @@ def get_image_override(deployment_options, short_image_name, env_var_name, org="
     tag = "latest"
     image_from_env = os.environ.get(env_var_name)
     if deployment_options.deploy_manifest_path:
-        print("Deploying {} according to manifest: {}".format(short_image_name, deployment_options.deploy_manifest_path))
+        print(
+            f"Deploying {short_image_name} according to manifest: {deployment_options.deploy_manifest_path}"
+        )
+
         with open(deployment_options.deploy_manifest_path, "r") as manifest_contnet:
             manifest = yaml.safe_load(manifest_contnet)
         tag = f"latest-{get_image_revision_from_manifest(short_image_name, manifest)}"
     elif deployment_options.deploy_manifest_tag:
-        print("Deploying {} according to assisted-installer-deployment tag: {}".format(short_image_name, deployment_options.deploy_manifest_tag))
+        print(
+            f"Deploying {short_image_name} according to assisted-installer-deployment tag: {deployment_options.deploy_manifest_tag}"
+        )
+
         manifest = get_manifest_from_url(deployment_options.deploy_manifest_tag)
         tag = f"latest-{get_image_revision_from_manifest(short_image_name, manifest)}"
     elif deployment_options.deploy_tag:
-        print("Deploying {} with deploy tag {}".format(short_image_name, deployment_options.deploy_tag))
+        print(
+            f"Deploying {short_image_name} with deploy tag {deployment_options.deploy_tag}"
+        )
+
         tag = deployment_options.deploy_tag
-    # In case non of the above options was used allow overriding specific images with env var
     elif image_from_env:
-        print("Overriding {} deployment image according to env {}".format(short_image_name, env_var_name))
-        print("{} image for deployment: {}".format(short_image_name, image_from_env))
+        print(
+            f"Overriding {short_image_name} deployment image according to env {env_var_name}"
+        )
+
+        print(f"{short_image_name} image for deployment: {image_from_env}")
         return image_from_env
 
     image_fqdn = IMAGE_FQDN_TEMPLATE.format(org, short_image_name, tag)
-    print("{} image for deployment: {}".format(short_image_name, image_fqdn))
+    print(f"{short_image_name} image for deployment: {image_fqdn}")
     return image_fqdn

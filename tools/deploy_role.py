@@ -27,7 +27,7 @@ def main():
 
     with open(dst_file, "a") as dst:
         log.info(f"Deploying {dst_file}")
-        dst.write("namespace: " + deploy_options.namespace + '\n')
+        dst.write(f"namespace: {deploy_options.namespace}" + '\n')
 
     if deploy_options.apply_manifest:
         utils.apply_kustomize(

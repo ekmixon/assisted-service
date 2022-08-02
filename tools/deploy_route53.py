@@ -21,7 +21,7 @@ def deploy_secret():
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
             data = data.replace("BASE64_CREDS", deploy_options.secret)
-            print("Deploying {}: {}".format(topic, dst_file))
+            print(f"Deploying {topic}: {dst_file}")
             dst.write(data)
     utils.apply(
         target=deploy_options.target,

@@ -12,7 +12,7 @@ def main():
         with open(dst_file, "w+") as dst:
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
 
     utils.apply(
@@ -27,7 +27,7 @@ def main():
         with open(dst_file, "w+") as dst:
             data = src.read()
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
     utils.apply(
         target=deploy_options.target,
@@ -54,7 +54,7 @@ def main():
                 size = "10Gi"
                 print("Using default size", size)
             data = data.replace("REPLACE_STORAGE", size)
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
 
     utils.apply(

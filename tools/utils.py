@@ -72,9 +72,12 @@ def check_output(command, raise_on_error=True):
     err = process.stderr.strip()
 
     if raise_on_error and process.returncode != 0:
-        raise RuntimeError(f'command={command} exited with an error={err if err else out} code={process.returncode}')
+        raise RuntimeError(
+            f'command={command} exited with an error={err or out} code={process.returncode}'
+        )
 
-    return out if out else err
+
+    return out or err
 
 
 def get_service_host(
@@ -168,7 +171,7 @@ def get_service_url(
 
 def to_url(host, port=None, disable_tls=False):
     protocol = 'http' if disable_tls else 'https'
-    port = port if port else 80 if disable_tls else 443
+    port = port or (80 if disable_tls else 443)
     return f'{protocol}://{host}:{port}'
 
 
@@ -208,7 +211,7 @@ def wait_for_rollout(
         desired_status='successfully rolled out'
         ):
     # Wait for the element to ensure it exists
-    for x in range(0, limit):
+    for _ in range(limit):
         try:
             status = check_if_exists(
                 k8s_object=k8s_object,
@@ -224,14 +227,14 @@ def wait_for_rollout(
             time.sleep(5)
 
     # Wait for the object to raise up
-    for x in range(0, limit):
+    for _ in range(limit):
         status = check_k8s_rollout(
             k8s_object=k8s_object,
             k8s_object_name=k8s_object_name,
             target=target,
             namespace=namespace
         )
-        print("Waiting for {}/{} to be ready".format(k8s_object, k8s_object_name))
+        print(f"Waiting for {k8s_object}/{k8s_object_name} to be ready")
         if desired_status in status:
             break
         else:
@@ -279,7 +282,7 @@ def get_runtime_command():
     elif is_tool(PODMAN):
         cmd = PODMAN
     else:
-        raise Exception("Nor %s nor %s are installed" % (PODMAN, DOCKER))
+        raise Exception(f"Nor {PODMAN} nor {DOCKER} are installed")
     return cmd
 
 
@@ -307,8 +310,7 @@ def get_cluster_server(cluster_name='default'):
         stderr=subprocess.PIPE,
     )
     out = p.stdout.read().decode().strip()
-    err = p.stderr.read().decode().strip()
-    if err:
+    if err := p.stderr.read().decode().strip():
         raise RuntimeError(
             f'failed to get server ip for cluster {cluster_name}: {err}'
         )

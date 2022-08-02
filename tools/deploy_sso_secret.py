@@ -27,7 +27,7 @@ def main():
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
             data = data.replace('REPLACE_OCM_SECRET', ocm_secret)
             data = data.replace('REPLACE_OCM_ID', ocm_id)
-            print("Deploying {}".format(dst_file))
+            print(f"Deploying {dst_file}")
             dst.write(data)
 
     if not deploy_options.apply_manifest:

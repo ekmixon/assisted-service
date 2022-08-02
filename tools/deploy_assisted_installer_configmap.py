@@ -53,11 +53,16 @@ def get_deployment_tag(args):
 
 def main():
     utils.verify_build_directory(deploy_options.namespace)
-    verify_images(release_images=json.loads(json.loads('"{}"'.format(deploy_options.release_images))))
+    verify_images(
+        release_images=json.loads(
+            json.loads(f'"{deploy_options.release_images}"')
+        )
+    )
+
     with open(SRC_FILE, "r") as src:
         with open(DST_FILE, "w+") as dst:
             data = src.read()
-            data = data.replace("REPLACE_DOMAINS", '"{}"'.format(deploy_options.base_dns_domains))
+            data = data.replace("REPLACE_DOMAINS", f'"{deploy_options.base_dns_domains}"')
 
             if deploy_options.apply_manifest:
                 data = data.replace("REPLACE_BASE_URL", utils.get_service_url(service=SERVICE,
@@ -74,19 +79,49 @@ def main():
                                                                             check_connection=True))
 
             data = data.replace('REPLACE_NAMESPACE', f'"{deploy_options.namespace}"')
-            data = data.replace('REPLACE_AUTH_TYPE_FLAG', '"{}"'.format(deploy_options.auth_type))
-            data = data.replace('REPLACE_CHECK_CLUSTER_VERSION_FLAG', '"{}"'.format(deploy_options.check_cvo))
-            data = data.replace('REPLACE_JWKS_URL', '"{}"'.format(deploy_options.jwks_url))
-            data = data.replace('REPLACE_OCM_BASE_URL', '"{}"'.format(deploy_options.ocm_url))
-            data = data.replace('REPLACE_OPENSHIFT_VERSIONS', '"{}"'.format(deploy_options.ocp_versions))
-            data = data.replace('REPLACE_OS_IMAGES', '"{}"'.format(deploy_options.os_images))
-            data = data.replace('REPLACE_RELEASE_IMAGES', '"{}"'.format(deploy_options.release_images))
-            data = data.replace('REPLACE_MUST_GATHER_IMAGES', '"{}"'.format(deploy_options.must_gather_images))
-            data = data.replace('REPLACE_PUBLIC_CONTAINER_REGISTRIES', '"{}"'.format(deploy_options.public_registries))
-            data = data.replace('REPLACE_IPV6_SUPPORT', '"{}"'.format(deploy_options.ipv6_support))
-            data = data.replace('REPLACE_HW_VALIDATOR_REQUIREMENTS', '"{}"'.format(deploy_options.hw_requirements))
-            data = data.replace('REPLACE_DISABLED_HOST_VALIDATIONS', '"{}"'.format(deploy_options.disabled_host_validations))
-            data = data.replace('REPLACE_DISABLED_STEPS', '"{}"'.format(deploy_options.disabled_steps))
+            data = data.replace('REPLACE_AUTH_TYPE_FLAG', f'"{deploy_options.auth_type}"')
+            data = data.replace(
+                'REPLACE_CHECK_CLUSTER_VERSION_FLAG',
+                f'"{deploy_options.check_cvo}"',
+            )
+
+            data = data.replace('REPLACE_JWKS_URL', f'"{deploy_options.jwks_url}"')
+            data = data.replace('REPLACE_OCM_BASE_URL', f'"{deploy_options.ocm_url}"')
+            data = data.replace(
+                'REPLACE_OPENSHIFT_VERSIONS',
+                f'"{deploy_options.ocp_versions}"',
+            )
+
+            data = data.replace('REPLACE_OS_IMAGES', f'"{deploy_options.os_images}"')
+            data = data.replace(
+                'REPLACE_RELEASE_IMAGES', f'"{deploy_options.release_images}"'
+            )
+
+            data = data.replace(
+                'REPLACE_MUST_GATHER_IMAGES',
+                f'"{deploy_options.must_gather_images}"',
+            )
+
+            data = data.replace(
+                'REPLACE_PUBLIC_CONTAINER_REGISTRIES',
+                f'"{deploy_options.public_registries}"',
+            )
+
+            data = data.replace('REPLACE_IPV6_SUPPORT', f'"{deploy_options.ipv6_support}"')
+            data = data.replace(
+                'REPLACE_HW_VALIDATOR_REQUIREMENTS',
+                f'"{deploy_options.hw_requirements}"',
+            )
+
+            data = data.replace(
+                'REPLACE_DISABLED_HOST_VALIDATIONS',
+                f'"{deploy_options.disabled_host_validations}"',
+            )
+
+            data = data.replace(
+                'REPLACE_DISABLED_STEPS', f'"{deploy_options.disabled_steps}"'
+            )
+
 
             versions = {"INSTALLER_IMAGE": "assisted-installer",
                         "CONTROLLER_IMAGE": "assisted-installer-controller",
@@ -103,10 +138,9 @@ def main():
                     deployment_options.get_tag(versions["INSTALLER_IMAGE"]))
 
             versions["SELF_VERSION"] = deployment_options.get_image_override(deploy_options, "assisted-service", "SERVICE")
-            log.info(f"Logging assisted-service information")
+            log.info("Logging assisted-service information")
             log_image_revision(versions["SELF_VERSION"])
-            deploy_tag = get_deployment_tag(deploy_options)
-            if deploy_tag:
+            if deploy_tag := get_deployment_tag(deploy_options):
                 versions["RELEASE_TAG"] = deploy_tag
 
             y = yaml.safe_load(data)
@@ -118,8 +152,7 @@ def main():
             if deploy_options.installation_timeout:
                 y['data']['INSTALLATION_TIMEOUT'] = str(deploy_options.installation_timeout)
 
-            admins = get_admin_users()
-            if admins:
+            if admins := get_admin_users():
                 y['data']['ADMIN_USERS'] = admins
 
             if deploy_options.img_expr_time:
@@ -137,7 +170,7 @@ def main():
             dst.write(data)
 
     if deploy_options.apply_manifest:
-        log.info("Deploying {}".format(DST_FILE))
+        log.info(f"Deploying {DST_FILE}")
         utils.apply(
             target=deploy_options.target,
             namespace=deploy_options.namespace,
@@ -160,9 +193,11 @@ def log_image_revision(image: str):
 def get_remote_image_inspect_json(image: str):
 
     image_inspect_str = docker_cmd(f"skopeo inspect docker://{image} --config")
-    if not image_inspect_str:
-        return None
-    return convert_image_inspect_to_json(image_inspect_str)
+    return (
+        convert_image_inspect_to_json(image_inspect_str)
+        if image_inspect_str
+        else None
+    )
 
 def convert_image_inspect_to_json(image_inspect_str):
     try:
